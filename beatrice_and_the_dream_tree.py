@@ -2,84 +2,84 @@ import sys
 sys.setrecursionlimit(1 << 25)
 
 def main():
-    data = sys.stdin.buffer.read().split()
-    if not data:
+    input_data = sys.stdin.buffer.read().split()
+    if not input_data:
         return
-    it = iter(data)
-    n = int(next(it))
+    data_iterator = iter(input_data)
+    num_nodes = int(next(data_iterator))
 
-    adj = [[] for _ in range(n + 1)]
-    for _ in range(n - 1):
-        u = int(next(it)); v = int(next(it))
-        adj[u].append(v)
-        adj[v].append(u)
+    adjacency_list = [[] for _ in range(num_nodes + 1)]
+    for _ in range(num_nodes - 1):
+        u = int(next(data_iterator)); v = int(next(data_iterator))
+        adjacency_list[u].append(v)
+        adjacency_list[v].append(u)
 
-    parent = [0] * (n + 1)
-    children = [[] for _ in range(n + 1)]
-    order = []
+    parent_map = [0] * (num_nodes + 1)
+    children_map = [[] for _ in range(num_nodes + 1)]
+    traversal_order = []
     stack = [1]
-    parent[1] = -1
+    parent_map[1] = -1
     while stack:
         u = stack.pop()
-        order.append(u)
-        for w in adj[u]:
-            if w == parent[u]:
+        traversal_order.append(u)
+        for neighbor in adjacency_list[u]:
+            if neighbor == parent_map[u]:
                 continue
-            parent[w] = u
-            children[u].append(w)
-            stack.append(w)
+            parent_map[neighbor] = u
+            children_map[u].append(neighbor)
+            stack.append(neighbor)
 
-    sig_to_id = {}
-    next_id = 0
+    signature_to_id = {}
+    next_available_id = 0
 
-    def get_id(sig_tuple):
-        nonlocal next_id
-        cid = sig_to_id.get(sig_tuple)
-        if cid is None:
-            cid = next_id
-            sig_to_id[sig_tuple] = cid
-            next_id += 1
-        return cid
+    def get_id(signature_tuple):
+        nonlocal next_available_id
+        canonical_id = signature_to_id.get(signature_tuple)
+        if canonical_id is None:
+            canonical_id = next_available_id
+            signature_to_id[signature_tuple] = canonical_id
+            next_available_id += 1
+        return canonical_id
 
-    sub_id = [0] * (n + 1)
-    for u in reversed(order):
-        if not children[u]:
-            sig = ()
+    subtree_id = [0] * (num_nodes + 1)
+    for u in reversed(traversal_order):
+        if not children_map[u]:
+            signature = ()
         else:
-            child_ids = [sub_id[ch] for ch in children[u]]
-            child_ids.sort()
-            sig = tuple(child_ids)
-        sub_id[u] = get_id(sig)
+            child_ids_list = [subtree_id[child_node] for child_node in children_map[u]]
+            child_ids_list.sort()
+            signature = tuple(child_ids_list)
+        subtree_id[u] = get_id(signature)
 
-    up_id = [None] * (n + 1)
-    up_id[1] = None  # root has no parent branch
+    up_branch_id = [None] * (num_nodes + 1)
+    up_branch_id[1] = None  # root has no parent branch
 
-    for u in order:
-        k = len(children[u])
-        ch_ids = [sub_id[ch] for ch in children[u]]
+    for u in traversal_order:
+        num_children = len(children_map[u])
+        child_ids = [subtree_id[child_node] for child_node in children_map[u]]
 
-        sorted_ids = sorted(ch_ids)
+        sorted_child_ids = sorted(child_ids)
         import bisect
 
-        base_ids = sorted_ids.copy()
-        if up_id[u] is not None:
-            bisect.insort(base_ids, up_id[u])
+        base_signature_ids = sorted_child_ids.copy()
+        if up_branch_id[u] is not None:
+            bisect.insort(base_signature_ids, up_branch_id[u])
 
-        full_sig = tuple(base_ids)
+        full_signature = tuple(base_signature_ids)
         if u == 1:
-            distinct_full_ids = set()
-        full_id = get_id(full_sig)
-        distinct_full_ids.add(full_id)
+            distinct_full_signature_ids = set()
+        full_signature_id = get_id(full_signature)
+        distinct_full_signature_ids.add(full_signature_id)
 
-        for ch in children[u]:
-            cid = sub_id[ch]
-            pos = bisect.bisect_left(base_ids, cid)
-            up_list = []
-            up_list.extend(base_ids[:pos])
-            up_list.extend(base_ids[pos+1:])
-            up_id[ch] = get_id(tuple(up_list))
+        for child_node in children_map[u]:
+            canonical_id = subtree_id[child_node]
+            position = bisect.bisect_left(base_signature_ids, canonical_id)
+            up_signature_ids = []
+            up_signature_ids.extend(base_signature_ids[:position])
+            up_signature_ids.extend(base_signature_ids[position+1:])
+            up_branch_id[child_node] = get_id(tuple(up_signature_ids))
 
-    print(len(distinct_full_ids))
+    print(len(distinct_full_signature_ids))
 
 if __name__ == "__main__":
     main()

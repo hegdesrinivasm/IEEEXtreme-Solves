@@ -1,1 +1,2 @@
 # IEEEXtreme-Solves
+A repository dedicated to solving problems from the IEEEXtreme programming competition. This repository contains solutions to various challenges posed during the competition, implemented in multiple programming languages -- for IEEEXtreme 19.0.
